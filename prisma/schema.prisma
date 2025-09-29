@@ -1,0 +1,607 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Config {
+  id    Int    @id @default(autoincrement())
+  key   String @unique @db.VarChar(255)
+  value String @db.Text
+  title String @db.VarChar(255)
+
+  @@map("config")
+}
+
+model Domain {
+  id          Int      @id @default(autoincrement())
+  userId      Int?     @map("user_id")
+  domain      String   @unique @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at")
+  accountId   Int?     @map("account_id")
+  ns1         String?  @db.VarChar(255)
+  ns2         String?  @db.VarChar(255)
+  zoneId      String?  @map("zone_id") @db.VarChar(255)
+  cfAccountId String?  @map("cf_account_id") @db.VarChar(255)
+  account     Account? @relation(fields: [accountId], references: [id])
+  user        User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId], map: "domains_user_id_fkey")
+  @@index([accountId], map: "domains_account_id_fkey")
+  @@map("domains")
+}
+
+model Account {
+  id          Int      @id @default(autoincrement())
+  email       String   @unique @db.VarChar(255)
+  apiKey      String   @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at")
+  password    String   @default("") @db.VarChar(255)
+  cfAccountId String?  @map("cf_account_id") @db.VarChar(255)
+  domains     Domain[]
+
+  @@map("accounts")
+}
+
+model User {
+  id               Int               @id @default(autoincrement())
+  email            String            @unique @db.VarChar(185)
+  password         String            @db.VarChar(97)
+  createdAt        DateTime          @default(now()) @map("created_at")
+  balance          Decimal           @default(0.00) @db.Decimal(10, 2)
+  workerId         Int?              @map("worker_id")
+  domainId         Int?              @map("domain_id")
+  role             Int               @default(0) @map("role_id") @db.TinyInt
+  isAmlVerified    Boolean           @default(false) @map("is_aml_verified")
+  activations      Activation[]
+  amlVerifications AmlVerification[] @relation("UserAmlVerifications")
+  authorizations   Authorization[]
+  deposits         Deposit[]
+  domains          Domain[]
+  gameHistory      GameHistory[]
+  logs             Log[]
+  promocodes       Promocode[]       @relation("UserPromocodes")
+  seeds            Seed[]
+  slotSession      SlotSession[]
+  supportMessages  Support[]
+  transactions     Transaction[]
+  uploads          Upload[]
+  userErrors       UserErrors[]
+  worker           User?             @relation("UserWorker", fields: [workerId], references: [id])
+  workers          User[]            @relation("UserWorker")
+  usersetting      usersetting[]
+  withdrawal       withdrawal[]
+  workerWallet     WorkerWallet?
+  rounds           game_rounds[]
+
+  @@index([id, domainId, workerId])
+  @@index([workerId], map: "users_worker_id_fkey")
+  @@map("users")
+}
+
+model Coin {
+  id           Int           @id @default(autoincrement())
+  name         String        @db.VarChar(255)
+  symbol       String        @unique @db.VarChar(255)
+  icon         String?       @db.VarChar(255)
+  price        Decimal       @default(0.000000) @db.Decimal(16, 6)
+  priority     Int           @default(0)
+  deposits     Deposit[]
+  transactions Transaction[]
+
+  @@map("coins")
+}
+
+model Deposit {
+  id         Int          @id @default(autoincrement())
+  userId     Int          @map("user_id")
+  coinId     Int          @map("coin_id")
+  amount     Decimal      @db.Decimal(10, 6)
+  sum        Decimal      @db.Decimal(10, 6)
+  txId       String       @map("tx_id") @db.VarChar(255)
+  createdAt  DateTime     @default(now()) @map("created_at")
+  address    String       @default("") @db.VarChar(255)
+  status     String       @default("pending")
+  pathIndex  Int?         @map("path_index")
+  tatumAccountId String?  @map("tatum_account_id") @db.VarChar(128)
+  tatumSubscriptionId String? @map("tatum_subscription_id") @db.VarChar(128)
+  xpub       String?      @db.VarChar(192)
+  currency   String?      @db.VarChar(40)
+  chain      String?      @db.VarChar(64)
+  hdPath     String?      @map("hd_path") @db.VarChar(64)
+  coin       Coin         @relation(fields: [coinId], references: [id], onDelete: NoAction)
+  user       User         @relation(fields: [userId], references: [id], onDelete: NoAction)
+  withdrawal withdrawal[]
+
+  @@index([coinId], map: "deposits_coin_id_fkey")
+  @@index([userId], map: "deposits_user_id_fkey")
+  @@map("deposits")
+}
+
+model Promocode {
+  id          Int          @id @default(autoincrement())
+  code        String       @db.VarChar(32)
+  amount      Float
+  message     String?      @db.Text
+  userId      Int          @map("user_id")
+  isLucky     Boolean      @default(false) @map("is_lucky")
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamp(6)
+  activations Activation[]
+  user        User         @relation("UserPromocodes", fields: [userId], references: [id], onDelete: NoAction)
+
+  @@index([userId], map: "promocodes_user_id_fkey")
+  @@map("promocodes")
+}
+
+model Activation {
+  id          Int       @id @default(autoincrement())
+  userId      Int       @map("user_id")
+  amount      Decimal   @db.Decimal(10, 6)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  promocodeId Int       @map("promocode_id")
+  promocode   Promocode @relation(fields: [promocodeId], references: [id], onDelete: NoAction)
+  user        User      @relation(fields: [userId], references: [id], onDelete: NoAction)
+
+  @@index([promocodeId], map: "activations_promocode_id_fkey")
+  @@index([userId], map: "activations_user_id_fkey")
+  @@map("activations")
+}
+
+model Authorization {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  device      String   @db.VarChar(255)
+  os          String   @db.VarChar(255)
+  ip          String   @db.VarChar(255)
+  browser     String   @db.VarChar(255)
+  city        String   @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at")
+  location    String   @db.VarChar(255)
+  countryCode String   @map("country_code") @db.VarChar(4)
+  User        User     @relation(fields: [userId], references: [id], onDelete: NoAction, map: "user_id")
+
+  @@index([userId], map: "user_id")
+  @@map("authorizations")
+}
+
+model Seed {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  seed      String   @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: NoAction)
+
+  @@index([userId], map: "seeds_user_id_fkey")
+  @@map("seeds")
+}
+
+model Support {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @map("user_id")
+  message      String   @db.Text
+  attachmentId Int?     @map("attachment_id")
+  role         Role     @default(USER)
+  createdAt    DateTime @default(now()) @map("created_at")
+  isAdminRead  Boolean  @default(false)
+  isRead       Boolean  @default(false)
+  User         User     @relation(fields: [userId], references: [id], onDelete: NoAction)
+
+  @@index([userId], map: "support_user_id_fkey")
+  @@map("support")
+}
+
+model Answer {
+  id       Int    @id @default(autoincrement())
+  name     String @db.VarChar(255)
+  text     String @db.Text
+  priority Int    @default(0)
+
+  @@map("answers")
+}
+
+model Country {
+  id   Int    @id @default(autoincrement())
+  name String @db.VarChar(255)
+  code String @db.VarChar(4)
+  flag String @db.VarChar(64)
+  tier Int    @db.TinyInt
+
+  @@map("countries")
+}
+
+model Transaction {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  coinId    Int      @map("coin_id")
+  amount    Decimal  @db.Decimal(10, 6)
+  sum       Decimal  @db.Decimal(10, 6)
+  txId      String   @map("tx_id") @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at")
+  statusId  Int      @map("status_id") @db.TinyInt
+  typeId    Int      @map("type_id") @db.TinyInt
+  address   String   @default("") @db.VarChar(255)
+  coin      Coin     @relation(fields: [coinId], references: [id], onDelete: NoAction)
+  user      User     @relation(fields: [userId], references: [id], onDelete: NoAction)
+
+  @@index([coinId], map: "transactions_coin_id_fkey")
+  @@index([userId], map: "transactions_user_id_fkey")
+  @@map("transactions")
+}
+
+model Upload {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  name      String   @db.VarChar(255)
+  size      Int
+  ext       String   @db.VarChar(255)
+  type      String   @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at")
+  fileName  String?  @map("file_name") @db.VarChar(255)
+  blog      Blog[]
+  slot      Slot[]
+  user      User     @relation(fields: [userId], references: [id], onDelete: NoAction)
+
+  @@index([userId], map: "uploads_user_id_fkey")
+  @@map("uploads")
+}
+
+model Blog {
+  id        Int      @id @default(autoincrement())
+  title     String   @db.VarChar(255)
+  content   String   @db.Text
+  bannerId  Int?     @map("banner_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  path      String   @unique @db.VarChar(255)
+  banner    Upload?  @relation(fields: [bannerId], references: [id])
+
+  @@index([bannerId], map: "blog_banner_id_fkey")
+  @@map("blog")
+}
+
+model Log {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  action    String   @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at")
+  typeId    Int      @map("type_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: NoAction)
+
+  @@index([userId], map: "logs_user_id_fkey")
+  @@map("logs")
+}
+
+model Slot {
+  id           Int           @id @default(autoincrement())
+  publicId     Int           @unique @map("public_id")
+  slug         String        @db.VarChar(255)
+  name         String        @db.VarChar(255)
+  isActive     Boolean       @default(true) @map("is_active")
+  link         String        @db.VarChar(255)
+  imageId      Int?          @map("image_id")
+  description  String?       @db.Text
+  gameHistory  GameHistory[]
+  gameSettings GameSetting[] @relation("SlotToGameSettings")
+  slotSession  SlotSession[]
+  image        Upload?       @relation(fields: [imageId], references: [id])
+
+  @@index([imageId], map: "slots_image_id_fkey")
+  @@map("slots")
+}
+
+model SlotSession {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  slotId    Int      @map("slot_id")
+  sessionId String   @map("session_id") @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at")
+  bonuses   Decimal? @db.Decimal(10, 6)
+  maxBet    Decimal? @db.Decimal(10, 6)
+  minBet    Decimal? @db.Decimal(10, 6)
+  slot      Slot     @relation(fields: [slotId], references: [id], onDelete: NoAction)
+  user      User     @relation(fields: [userId], references: [id], onDelete: NoAction)
+
+  @@index([slotId], map: "slot_sessions_slot_id_fkey")
+  @@index([userId], map: "slot_sessions_user_id_fkey")
+  @@map("slot_sessions")
+}
+
+model GameHistory {
+  id        Int      @id @default(autoincrement())
+  user      Int      @map("user_id")
+  slot      Int      @map("slot_id")
+  bet       Decimal  @db.Decimal(10, 6)
+  win       Decimal  @db.Decimal(10, 6)
+  createdAt DateTime @default(now()) @map("created_at")
+  Slot      Slot     @relation(fields: [slot], references: [id], onDelete: NoAction)
+  User      User     @relation(fields: [user], references: [id], onDelete: NoAction)
+
+  @@index([slot], map: "GameHistory_slot_id_fkey")
+  @@index([user], map: "GameHistory_user_id_fkey")
+  @@map("game_history")
+}
+
+model Error {
+  id          Int          @id @default(autoincrement())
+  key         String       @db.VarChar(255)
+  title       String       @db.VarChar(255)
+  value       String       @db.Text
+  description String?      @db.Text
+  userErrors  UserErrors[]
+
+  @@map("errors")
+}
+
+model UserErrors {
+  id      Int    @id @default(autoincrement())
+  userId  Int    @map("user_id")
+  errorId Int    @map("error_id")
+  value   String @db.Text
+  error   Error  @relation(fields: [errorId], references: [id], onDelete: NoAction)
+  user    User   @relation(fields: [userId], references: [id], onDelete: NoAction)
+
+  @@index([userId], map: "user_errors_user_id_fkey")
+  @@index([errorId], map: "user_errors_error_id_fkey")
+  @@map("user_errors")
+}
+
+model Setting {
+  id          Int           @id @default(autoincrement())
+  key         String        @unique @db.VarChar(255)
+  value       String        @db.Text
+  type        SettingsTypes
+  description String        @db.Text
+  title       String        @db.VarChar(255)
+
+  @@map("settings")
+}
+
+model FaqCategory {
+  id   Int    @id @default(autoincrement())
+  name String @db.VarChar(255)
+  faq  Faq[]
+
+  @@map("faq_categories")
+}
+
+model Faq {
+  id         Int         @id @default(autoincrement())
+  question   String      @db.VarChar(255)
+  answer     String      @db.Text
+  categoryId Int         @map("category_id")
+  createdAt  DateTime    @default(now()) @map("created_at")
+  category   FaqCategory @relation(fields: [categoryId], references: [id], onDelete: NoAction)
+
+  @@index([categoryId], map: "faq_category_id_fkey")
+  @@map("faq")
+}
+
+model Page {
+  id        Int      @id @default(autoincrement())
+  title     String   @db.VarChar(255)
+  content   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  path      String   @unique @db.VarChar(255)
+
+  @@map("pages")
+}
+
+model WorkerWallet {
+  id        Int      @id @default(autoincrement())
+  workerId  Int      @unique @map("worker_id")
+  address   String   @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at")
+  worker    User     @relation(fields: [workerId], references: [id], onDelete: NoAction)
+
+  @@map("worker_wallets")
+}
+
+model usersetting {
+  id                 Int     @id @default(autoincrement())
+  user_id            Int
+  is_abuse_promocode Boolean @default(false)
+  is_aml             Boolean @default(false)
+  is_blocked         Boolean @default(false)
+  is_fake_withdraw   Boolean @default(false)
+  is_lucky           Boolean @default(false)
+  is_vip             Boolean @default(false)
+  min_deposit        Decimal @default(0.00) @db.Decimal(10, 2)
+  min_withdraw       Decimal @default(0.00) @db.Decimal(10, 2)
+  users              User    @relation(fields: [user_id], references: [id], onDelete: NoAction, map: "UserSetting_user_id_fkey")
+
+  @@index([user_id], map: "UserSetting_user_id_fkey")
+}
+
+model withdrawal {
+  id         Int      @id @default(autoincrement())
+  deposit_id Int
+  user_id    Int
+  toAddress  String   @db.VarChar(255)
+  amount     Decimal  @db.Decimal(18, 8)
+  tx_id      String?  @db.VarChar(255)
+  status     String   @default("pending")
+  created_at DateTime @default(now())
+  deposits   Deposit  @relation(fields: [deposit_id], references: [id], onDelete: NoAction, map: "Withdrawal_deposit_id_fkey")
+  users      User     @relation(fields: [user_id], references: [id], onDelete: NoAction, map: "Withdrawal_user_id_fkey")
+
+  @@index([deposit_id], map: "Withdrawal_deposit_id_fkey")
+  @@index([user_id], map: "Withdrawal_user_id_fkey")
+}
+
+model GameSetting {
+  id               Int      @id @default(autoincrement())
+  gameId           Int      @map("game_id")
+  minAdjustPercent Int      @map("min_adjust_percent")
+  maxAdjustPercent Int      @map("max_adjust_percent")
+  createdAt        DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  slot             Slot     @relation("SlotToGameSettings", fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@index([gameId], map: "game_settings_game_id_fkey")
+  @@map("game_settings")
+}
+
+model bonus_sessions {
+  id           Int                       @id @default(autoincrement()) @db.UnsignedInt
+  session_id   String                    @unique(map: "bonus_sessions_session_id_unique") @db.VarChar(255)
+  game_id      String                    @db.VarChar(255)
+  user_id      String?                   @db.VarChar(255)
+  bonus_type   bonus_sessions_bonus_type
+  total_spins  Int
+  current_spin Int?                      @default(0)
+  total_bet    Decimal                   @db.Decimal(10, 2)
+  total_win    Decimal?                  @default(0.00) @db.Decimal(10, 2)
+  buy_cost     Decimal?                  @db.Decimal(10, 2)
+  bonus_params Json?
+  status       bonus_sessions_status?    @default(active)
+  created_at   DateTime                  @default(now()) @db.Timestamp(0)
+  updated_at   DateTime                  @default(now()) @db.Timestamp(0)
+  games        games                     @relation(fields: [game_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "bonus_sessions_game_id_foreign")
+  bonus_spins  bonus_spins[]
+
+  @@index([game_id, status], map: "bonus_sessions_game_id_status_index")
+  @@index([session_id, status], map: "bonus_sessions_session_id_status_index")
+}
+
+model bonus_spins {
+  id               Int            @id @default(autoincrement()) @db.UnsignedInt
+  session_id       Int            @db.UnsignedInt
+  spin_number      Int
+  symbols_result   String         @db.VarChar(255)
+  symbols_above    String         @db.VarChar(255)
+  symbols_below    String         @db.VarChar(255)
+  spin_win         Decimal?       @default(0.00) @db.Decimal(10, 2)
+  winning_lines    String?        @db.VarChar(255)
+  special_features Json?
+  multiplier       Int?           @default(1)
+  response_data    Json?
+  created_at       DateTime?      @default(now()) @db.Timestamp(0)
+  bonus_sessions   bonus_sessions @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "bonus_spins_session_id_foreign")
+
+  @@index([session_id, spin_number], map: "bonus_spins_session_id_spin_number_index")
+}
+
+model game_sessions {
+  id               Int       @id @default(autoincrement()) @db.UnsignedInt
+  session_id       String    @unique(map: "game_sessions_session_id_unique") @db.VarChar(36)
+  user_id          String?   @db.VarChar(50)
+  game_id          String    @db.VarChar(50)
+  balance          Decimal?  @default(0.00) @db.Decimal(15, 2)
+  total_bet        Decimal?  @default(0.00) @db.Decimal(10, 2)
+  total_win        Decimal?  @default(0.00) @db.Decimal(15, 2)
+  spins_count      Int?      @default(0)
+  status           String?   @default("active") @db.VarChar(20)
+  bonus_session_id Int?      @db.UnsignedInt
+  last_activity    DateTime? @default(now()) @db.Timestamp(0)
+  created_at       DateTime  @default(now()) @db.Timestamp(0)
+  updated_at       DateTime  @default(now()) @db.Timestamp(0)
+
+  @@index([game_id, status], map: "game_sessions_game_id_status_index")
+  @@index([session_id], map: "game_sessions_session_id_index")
+  @@index([user_id, status], map: "game_sessions_user_id_status_index")
+}
+
+model games {
+  id             String           @id @db.VarChar(255)
+  name           String?          @db.VarChar(255)
+  kind           GameKind         @default(PLINKO)
+  is_active      Boolean          @default(true)
+  volatility     Volatility?
+  min_bet        Decimal?         @db.Decimal(10, 2)
+  max_bet        Decimal?         @db.Decimal(10, 2)
+  house_edge     Decimal?         @db.Decimal(5, 2)
+  reels_count    Int?
+  rows_count     Int?
+  lines          Int?
+  default_bet    Decimal?         @db.Decimal(10, 2)
+  config         Json?
+  rtp_adjust_min Int              @default(0)
+  rtp_adjust_max Int              @default(0)
+  rounds         game_rounds[]
+  created_at     DateTime?        @default(now()) @db.Timestamp(0)
+  updated_at     DateTime?        @default(now()) @db.Timestamp(0)
+  bonus_sessions bonus_sessions[]
+}
+
+model game_rounds {
+  id         Int      @id @default(autoincrement())
+  game_id    String   @db.VarChar(255)
+  user_id    Int
+  coin       String   @db.VarChar(32)
+  bet        Decimal  @db.Decimal(10, 6)
+  win        Decimal  @db.Decimal(10, 6)
+  // Специфика Plinko — куда упало
+  final_slot Int?
+  // Любые доп. данные от раунда (путь шарика, seed, multipliers версии и т.п.)
+  payload    Json?
+  created_at DateTime @default(now()) @db.Timestamp(0)
+
+  game games @relation(fields: [game_id], references: [id], onDelete: NoAction)
+  user User  @relation(fields: [user_id], references: [id], onDelete: NoAction)
+
+  @@index([game_id])
+  @@index([user_id])
+}
+
+model knex_migrations {
+  id             Int       @id @default(autoincrement()) @db.UnsignedInt
+  name           String?   @db.VarChar(255)
+  batch          Int?
+  migration_time DateTime? @db.Timestamp(0)
+}
+
+model knex_migrations_lock {
+  index     Int  @id @default(autoincrement()) @db.UnsignedInt
+  is_locked Int?
+}
+
+model AmlVerification {
+  id         Int       @id @default(autoincrement())
+  userId     Int       @map("user_id")
+  code       String    @unique @db.VarChar(255)
+  status     String    @default("pending")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  verifiedAt DateTime? @map("verified_at")
+  user       User      @relation("UserAmlVerifications", fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("aml_verifications")
+}
+
+enum SettingsTypes {
+  STRING
+  BOOL
+  NUMBER
+}
+
+enum bonus_sessions_bonus_type {
+  free_spins
+  bonus_buy
+}
+
+enum bonus_sessions_status {
+  active
+  completed
+  cancelled
+}
+
+enum Role {
+  USER
+  BOT
+  ADMIN
+}
+
+enum GameKind {
+  PLINKO
+  SLOT
+  DICE
+  MINES
+  OTHER
+}
+
+enum Volatility {
+  LOW
+  MEDIUM
+  HIGH
+}

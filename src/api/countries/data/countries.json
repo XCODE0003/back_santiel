@@ -1,0 +1,476 @@
+[
+  {
+    "name": "United States",
+    "code": "US",
+    "tier": 1,
+    "flag": "🇺🇸"
+  },
+  {
+    "name": "Canada",
+    "code": "CA",
+    "tier": 1,
+    "flag": "🇨🇦"
+  },
+  {
+    "name": "Mexico",
+    "code": "MX",
+    "tier": 2,
+    "flag": "🇲🇽"
+  },
+  {
+    "name": "Brazil",
+    "code": "BR",
+    "tier": 2,
+    "flag": "🇧🇷"
+  },
+  {
+    "name": "Argentina",
+    "code": "AR",
+    "tier": 2,
+    "flag": "🇦🇷"
+  },
+  {
+    "name": "United Kingdom",
+    "code": "GB",
+    "tier": 1,
+    "flag": "🇬🇧"
+  },
+  {
+    "name": "Germany",
+    "code": "DE",
+    "tier": 1,
+    "flag": "🇩🇪"
+  },
+  {
+    "name": "France",
+    "code": "FR",
+    "tier": 1,
+    "flag": "🇫🇷"
+  },
+  {
+    "name": "Italy",
+    "code": "IT",
+    "tier": 1,
+    "flag": "🇮🇹"
+  },
+  {
+    "name": "Spain",
+    "code": "ES",
+    "tier": 1,
+    "flag": "🇪🇸"
+  },
+  {
+    "name": "Portugal",
+    "code": "PT",
+    "tier": 1,
+    "flag": "🇵🇹"
+  },
+  {
+    "name": "Russia",
+    "code": "RU",
+    "tier": 1,
+    "flag": "🇷🇺"
+  },
+  {
+    "name": "China",
+    "code": "CN",
+    "tier": 1,
+    "flag": "🇨🇳"
+  },
+  {
+    "name": "India",
+    "code": "IN",
+    "tier": 1,
+    "flag": "🇮🇳"
+  },
+  {
+    "name": "Japan",
+    "code": "JP",
+    "tier": 1,
+    "flag": "🇯🇵"
+  },
+  {
+    "name": "South Korea",
+    "code": "KR",
+    "tier": 1,
+    "flag": "🇰🇷"
+  },
+  {
+    "name": "Australia",
+    "code": "AU",
+    "tier": 1,
+    "flag": "🇦🇺"
+  },
+  {
+    "name": "New Zealand",
+    "code": "NZ",
+    "tier": 1,
+    "flag": "🇳🇿"
+  },
+  {
+    "name": "South Africa",
+    "code": "ZA",
+    "tier": 2,
+    "flag": "🇿🇦"
+  },
+  {
+    "name": "Nigeria",
+    "code": "NG",
+    "tier": 2,
+    "flag": "🇳🇬"
+  },
+  {
+    "name": "Kenya",
+    "code": "KE",
+    "tier": 2,
+    "flag": "🇰🇪"
+  },
+  {
+    "name": "Egypt",
+    "code": "EG",
+    "tier": 2,
+    "flag": "🇪🇬"
+  },
+  {
+    "name": "Saudi Arabia",
+    "code": "SA",
+    "tier": 1,
+    "flag": "🇸🇦"
+  },
+  {
+    "name": "United Arab Emirates",
+    "code": "AE",
+    "tier": 1,
+    "flag": "🇦🇪"
+  },
+  {
+    "name": "Turkey",
+    "code": "TR",
+    "tier": 1,
+    "flag": "🇹🇷"
+  },
+  {
+    "name": "Israel",
+    "code": "IL",
+    "tier": 1,
+    "flag": "🇮🇱"
+  },
+  {
+    "name": "Sweden",
+    "code": "SE",
+    "tier": 1,
+    "flag": "🇸🇪"
+  },
+  {
+    "name": "Norway",
+    "code": "NO",
+    "tier": 1,
+    "flag": "🇳🇴"
+  },
+  {
+    "name": "Denmark",
+    "code": "DK",
+    "tier": 1,
+    "flag": "🇩🇰"
+  },
+  {
+    "name": "Finland",
+    "code": "FI",
+    "tier": 1,
+    "flag": "🇫🇮"
+  },
+  {
+    "name": "Netherlands",
+    "code": "NL",
+    "tier": 1,
+    "flag": "🇳🇱"
+  },
+  {
+    "name": "Belgium",
+    "code": "BE",
+    "tier": 1,
+    "flag": "🇧🇪"
+  },
+  {
+    "name": "Switzerland",
+    "code": "CH",
+    "tier": 1,
+    "flag": "🇨🇭"
+  },
+  {
+    "name": "Austria",
+    "code": "AT",
+    "tier": 1,
+    "flag": "🇦🇹"
+  },
+  {
+    "name": "Poland",
+    "code": "PL",
+    "tier": 1,
+    "flag": "🇵🇱"
+  },
+  {
+    "name": "Greece",
+    "code": "GR",
+    "tier": 1,
+    "flag": "🇬🇷"
+  },
+  {
+    "name": "Czech Republic",
+    "code": "CZ",
+    "tier": 1,
+    "flag": "🇨🇿"
+  },
+  {
+    "name": "Slovakia",
+    "code": "SK",
+    "tier": 1,
+    "flag": "🇸🇰"
+  },
+  {
+    "name": "Hungary",
+    "code": "HU",
+    "tier": 1,
+    "flag": "🇭🇺"
+  },
+  {
+    "name": "Romania",
+    "code": "RO",
+    "tier": 1,
+    "flag": "🇷🇴"
+  },
+  {
+    "name": "Bulgaria",
+    "code": "BG",
+    "tier": 1,
+    "flag": "🇧🇬"
+  },
+  {
+    "name": "Croatia",
+    "code": "HR",
+    "tier": 1,
+    "flag": "🇭🇷"
+  },
+  {
+    "name": "Serbia",
+    "code": "RS",
+    "tier": 1,
+    "flag": "🇷🇸"
+  },
+  {
+    "name": "Albania",
+    "code": "AL",
+    "tier": 1,
+    "flag": "🇦🇱"
+  },
+  {
+    "name": "Bosnia and Herzegovina",
+    "code": "BA",
+    "tier": 1,
+    "flag": "🇧🇦"
+  },
+  {
+    "name": "Slovenia",
+    "code": "SI",
+    "tier": 1,
+    "flag": "🇸🇮"
+  },
+  {
+    "name": "North Macedonia",
+    "code": "MK",
+    "tier": 1,
+    "flag": "🇲🇰"
+  },
+  {
+    "name": "Kosovo",
+    "code": "XK",
+    "tier": 1,
+    "flag": "🇽🇰"
+  },
+  {
+    "name": "Montenegro",
+    "code": "ME",
+    "tier": 1,
+    "flag": "🇲🇪"
+  },
+  {
+    "name": "Moldova",
+    "code": "MD",
+    "tier": 1,
+    "flag": "🇲🇩"
+  },
+  {
+    "name": "Latvia",
+    "code": "LV",
+    "tier": 1,
+    "flag": "🇱🇻"
+  },
+  {
+    "name": "Lithuania",
+    "code": "LT",
+    "tier": 1,
+    "flag": "🇱🇹"
+  },
+  {
+    "name": "Estonia",
+    "code": "EE",
+    "tier": 1,
+    "flag": "🇪🇪"
+  },
+  {
+    "name": "Armenia",
+    "code": "AM",
+    "tier": 2,
+    "flag": "🇦🇲"
+  },
+  {
+    "name": "Georgia",
+    "code": "GE",
+    "tier": 2,
+    "flag": "🇬🇪"
+  },
+  {
+    "name": "Azerbaijan",
+    "code": "AZ",
+    "tier": 2,
+    "flag": "🇦🇿"
+  },
+  {
+    "name": "Kazakhstan",
+    "code": "KZ",
+    "tier": 2,
+    "flag": "🇰🇿"
+  },
+  {
+    "name": "Kyrgyzstan",
+    "code": "KG",
+    "tier": 2,
+    "flag": "🇰🇬"
+  },
+  {
+    "name": "Uzbekistan",
+    "code": "UZ",
+    "tier": 2,
+    "flag": "🇺🇿"
+  },
+  {
+    "name": "Turkmenistan",
+    "code": "TM",
+    "tier": 2,
+    "flag": "🇹🇲"
+  },
+  {
+    "name": "Tajikistan",
+    "code": "TJ",
+    "tier": 2,
+    "flag": "🇹🇯"
+  },
+  {
+    "name": "Mongolia",
+    "code": "MN",
+    "tier": 2,
+    "flag": "🇲🇳"
+  },
+  {
+    "name": "Nepal",
+    "code": "NP",
+    "tier": 2,
+    "flag": "🇳🇵"
+  },
+  {
+    "name": "Bhutan",
+    "code": "BT",
+    "tier": 2,
+    "flag": "🇧🇹"
+  },
+  {
+    "name": "Sri Lanka",
+    "code": "LK",
+    "tier": 2,
+    "flag": "🇱🇰"
+  },
+  {
+    "name": "Maldives",
+    "code": "MV",
+    "tier": 2,
+    "flag": "🇲🇻"
+  },
+  {
+    "name": "Myanmar",
+    "code": "MM",
+    "tier": 2,
+    "flag": "🇲🇲"
+  },
+  {
+    "name": "Cambodia",
+    "code": "KH",
+    "tier": 2,
+    "flag": "🇰🇭"
+  },
+  {
+    "name": "Laos",
+    "code": "LA",
+    "tier": 2,
+    "flag": "🇱🇦"
+  },
+  {
+    "name": "Vietnam",
+    "code": "VN",
+    "tier": 2,
+    "flag": "🇻🇳"
+  },
+  {
+    "name": "Indonesia",
+    "code": "ID",
+    "tier": 2,
+    "flag": "🇮🇩"
+  },
+  {
+    "name": "Malaysia",
+    "code": "MY",
+    "tier": 2,
+    "flag": "🇲🇾"
+  },
+  {
+    "name": "Singapore",
+    "code": "SG",
+    "tier": 2,
+    "flag": "🇸🇬"
+  },
+  {
+    "name": "Philippines",
+    "code": "PH",
+    "tier": 2,
+    "flag": "🇵🇭"
+  },
+  {
+    "name": "Brunei",
+    "code": "BN",
+    "tier": 2,
+    "flag": "🇧🇳"
+  },
+  {
+    "name": "Thailand",
+    "code": "TH",
+    "tier": 2,
+    "flag": "🇹🇭"
+  },
+  {
+    "name": "South Korea",
+    "code": "KR",
+    "tier": 1,
+    "flag": "🇰🇷"
+  },
+  {
+    "name": "Taiwan",
+    "code": "TW",
+    "tier": 2,
+    "flag": "🇹🇼"
+  },
+  {
+    "name": "Hong Kong",
+    "code": "HK",
+    "tier": 2,
+    "flag": "🇭🇰"
+  }
+]
