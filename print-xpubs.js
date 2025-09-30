@@ -17,6 +17,7 @@ const chains = [
   { key: 'ETH_XPUB',  path: '/v3/ethereum/wallet'  },
   { key: 'BSC_XPUB',  path: '/v3/bsc/wallet'       },
   { key: 'TRON_XPUB', path: '/v3/tron/wallet'      },
+  { key: 'BASE_XPUB', path: '/v3/base/wallet'      },
 ]
 
 const client = axios.create({

@@ -37,7 +37,7 @@ export class TatumService {
   }
 
   async subscribeIncomingNative(
-    chain: 'ethereum-mainnet'|'bsc-mainnet'|'tron-mainnet'|'bitcoin-mainnet'|'litecoin-core-mainnet',
+    chain: 'ethereum-mainnet'|'bsc-mainnet'|'tron-mainnet'|'bitcoin-mainnet'|'litecoin-core-mainnet'|'base-mainnet'|'ripple-mainnet'|'solana-mainnet',
     address: string,
     callbackUrl: string,
   ): Promise<{ id: string }> {
@@ -53,6 +53,25 @@ export class TatumService {
   }
   async cancelSubscription(id: string): Promise<void> {
     await this.client().delete(`/v4/subscription/${id}`);
+  }
+
+  async createVirtualAccountByAddress(currency: string, address: string, customerId: string): Promise<string> {
+    const { data } = await this.client().post('/v3/ledger/account', {
+      currency,
+      address,
+      customer: { externalId: customerId },
+    });
+    return data?.id;
+  }
+
+  async generateSolanaWallet(): Promise<{ address?: string; privateKey?: string; mnemonic?: string }> {
+    const { data } = await this.client().get('/v3/solana/wallet');
+    return data || {};
+  }
+
+  async generateXrpAccount(): Promise<{ address?: string; secret?: string; privateKey?: string }> {
+    const { data } = await this.client().get('/v3/xrp/account');
+    return data || {};
   }
 }
 

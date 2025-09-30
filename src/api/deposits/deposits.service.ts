@@ -153,6 +153,7 @@ export class DepositsService {
           BSC: 'BSC_XPUB',
           TRX: 'TRON_XPUB',
           TRON: 'TRON_XPUB',
+          BASE: 'BASE_XPUB',
         };
 
         const currencyMap: Record<string, string> = {
@@ -163,35 +164,63 @@ export class DepositsService {
           BSC: 'BSC',
           TRX: 'TRON',
           TRON: 'TRON',
+          BASE: 'ETH_BASE',
+          XRP: 'XRP',
+          SOL: 'SOL',
         };
 
         const xpubKeyName = xpubEnvMap[sym] || xpubEnvMap[currencyMap[sym] || ''];
-        if (!xpubKeyName) throw new Error(`Unsupported coin: ${sym}`);
-
-        const xpub = this.config.get<string>(xpubKeyName)!;
-        if (!xpub) throw new Error(`${xpubKeyName} not set`);
+        const xpub = xpubKeyName ? this.config.get<string>(xpubKeyName)! : undefined;
 
         const customerId = `u:${userId}:${currencyMap[sym] || sym}`;
-        const accountId = await this.tatum.createVirtualAccount(currencyMap[sym] || sym, xpub, customerId);
-        const created = await this.tatum.createDepositAddress(accountId);
-        const addressRaw = created.address;
-        const derivationKey = created.derivationKey ?? null;
+        let accountId: string;
+        let addressRaw = '' as string;
+        let derivationKey: number | null = null;
+
+        if (xpub) {
+          accountId = await this.tatum.createVirtualAccount(currencyMap[sym] || sym, xpub, customerId);
+          const created = await this.tatum.createDepositAddress(accountId);
+          addressRaw = created.address;
+          derivationKey = created.derivationKey ?? null;
+        } else {
+          if (sym === 'XRP') {
+            const acc = await this.tatum.generateXrpAccount();
+            addressRaw = String(acc.address || '');
+            accountId = await this.tatum.createVirtualAccountByAddress('XRP', addressRaw, customerId);
+          } else if (sym === 'SOL') {
+            const w = await this.tatum.generateSolanaWallet();
+            addressRaw = String(w.address || '');
+            accountId = await this.tatum.createVirtualAccountByAddress('SOL', addressRaw, customerId);
+          } else if (sym === 'BASE') {
+            const xpubBase = this.config.get<string>('BASE_XPUB');
+            if (!xpubBase) throw new Error('BASE_XPUB not set');
+            accountId = await this.tatum.createVirtualAccount('ETH_BASE', xpubBase, customerId);
+            const created = await this.tatum.createDepositAddress(accountId);
+            addressRaw = created.address;
+            derivationKey = created.derivationKey ?? null;
+          } else {
+            throw new Error(`Unsupported coin without xpub: ${sym}`);
+          }
+        }
 
         const evmSet = new Set(['ETH','BSC','BNB']);
         const addrToStore = evmSet.has((currencyMap[sym] || sym)) ? String(addressRaw).toLowerCase() : String(addressRaw);
 
-        const COIN_TYPE: Record<string, number> = { BTC: 0, LTC: 2, ETH: 60, BSC: 60, BNB: 60, TRON: 195 };
+        const COIN_TYPE: Record<string, number> = { BTC: 0, LTC: 2, ETH: 60, BSC: 60, BNB: 60, TRON: 195, XRP: 144, SOL: 501, BASE: 60 };
         const coinType = COIN_TYPE[currencyMap[sym] || sym] ?? 60;
         const hdPath = derivationKey != null ? `m/44'/${coinType}'/0'/0/${derivationKey}` : null;
 
         const chainsV4: Record<string,
-          'ethereum-mainnet'|'bsc-mainnet'|'tron-mainnet'|'bitcoin-mainnet'|'litecoin-core-mainnet'
+          'ethereum-mainnet'|'bsc-mainnet'|'tron-mainnet'|'bitcoin-mainnet'|'litecoin-core-mainnet'|'base-mainnet'|'ripple-mainnet'|'solana-mainnet'
         > = {
           ETH: 'ethereum-mainnet',
           BSC: 'bsc-mainnet',
           BTC: 'bitcoin-mainnet',
           LTC: 'litecoin-core-mainnet',
           TRON: 'tron-mainnet',
+          BASE: 'base-mainnet',
+          XRP: 'ripple-mainnet',
+          SOL: 'solana-mainnet',
         };
         const chainV4 = chainsV4[currencyMap[sym] || sym];
 
