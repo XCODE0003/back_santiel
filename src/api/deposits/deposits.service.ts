@@ -1,18 +1,18 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
+import { ethers } from 'ethers'
 
 import { GetAllDepositsDto } from '@/api/deposits/dto/get-all'
+import { TatumService } from '@/common/services/tatum/tatum.service'
 import { PrismaService } from '@/infra/prisma/prisma.service'
 import { formatPath } from '@/libs/formatPath'
-import { ethers } from 'ethers'
-import { ConfigService } from '@nestjs/config'
-import { TatumService } from '@/common/services/tatum/tatum.service'
 
 @Injectable()
 export class DepositsService {
     constructor(
         private readonly prisma: PrismaService,
         private readonly config: ConfigService,
-        private readonly tatum: TatumService,
+        private readonly tatum: TatumService
     ) {}
 
     async getAll(dto: GetAllDepositsDto, userId?: number) {
@@ -122,151 +122,199 @@ export class DepositsService {
 
     async getDepositAddress(userId: number, coinSymbol: string) {
         const coin = await this.prisma.coin.findUnique({
-          where: { symbol: coinSymbol },
-        });
+            where: { symbol: coinSymbol }
+        })
         if (!coin) {
-          throw new NotFoundException(`Coin not found: ${coinSymbol}`);
+            throw new NotFoundException(`Coin not found: ${coinSymbol}`)
         }
 
         const existing = await this.prisma.deposit.findFirst({
-          where: { userId, coinId: coin.id, status: 'pending' },
-        });
+            where: { userId, coinId: coin.id, status: 'pending' }
+        })
         if (existing) {
-            const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
+            const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000)
             if (existing.createdAt < twelveHoursAgo) {
-              return { address: existing.address };
-            }
-            else {
-              await this.prisma.deposit.delete({
-                where: { id: existing.id },
-              });
+                return { address: existing.address }
+            } else {
+                if (existing.tatumSubscriptionId) {
+                    await this.tatum.cancelSubscription(
+                        existing.tatumSubscriptionId
+                    )
+                }
+                await this.prisma.deposit.delete({
+                    where: { id: existing.id }
+                })
             }
         }
 
-        const sym = coin.symbol.toUpperCase();
+        const sym = coin.symbol.toUpperCase()
 
         const xpubEnvMap: Record<string, string> = {
-          BTC: 'BTC_XPUB',
-          LTC: 'LTC_XPUB',
-          ETH: 'ETH_XPUB',
-          BNB: 'BSC_XPUB',
-          BSC: 'BSC_XPUB',
-          TRX: 'TRON_XPUB',
-          TRON: 'TRON_XPUB',
-          BASE: 'BASE_XPUB',
-        };
-
-        const currencyMap: Record<string, string> = {
-          BTC: 'BTC',
-          LTC: 'LTC',
-          ETH: 'ETH',
-          BNB: 'BSC',
-          BSC: 'BSC',
-          TRX: 'TRON',
-          TRON: 'TRON',
-          BASE: 'ETH_BASE',
-          XRP: 'XRP',
-          SOL: 'SOL',
-        };
-
-        const xpubKeyName = xpubEnvMap[sym] || xpubEnvMap[currencyMap[sym] || ''];
-        const xpub = xpubKeyName ? this.config.get<string>(xpubKeyName)! : undefined;
-
-        const customerId = `u:${userId}:${currencyMap[sym] || sym}`;
-        let accountId: string;
-        let addressRaw = '' as string;
-        let derivationKey: number | null = null;
-
-        if (xpub) {
-          accountId = await this.tatum.createVirtualAccount(currencyMap[sym] || sym, xpub, customerId);
-          const created = await this.tatum.createDepositAddress(accountId);
-          addressRaw = created.address;
-          derivationKey = created.derivationKey ?? null;
-        } else {
-          if (sym === 'XRP') {
-            const acc = await this.tatum.generateXrpAccount();
-            addressRaw = String(acc.address || '');
-            accountId = await this.tatum.createVirtualAccountByAddress('XRP', addressRaw, customerId);
-          } else if (sym === 'SOL') {
-            const w = await this.tatum.generateSolanaWallet();
-            addressRaw = String(w.address || '');
-            accountId = await this.tatum.createVirtualAccountByAddress('SOL', addressRaw, customerId);
-          } else if (sym === 'BASE') {
-            const xpubBase = this.config.get<string>('BASE_XPUB');
-            if (!xpubBase) throw new Error('BASE_XPUB not set');
-            accountId = await this.tatum.createVirtualAccount('ETH_BASE', xpubBase, customerId);
-            const created = await this.tatum.createDepositAddress(accountId);
-            addressRaw = created.address;
-            derivationKey = created.derivationKey ?? null;
-          } else {
-            throw new Error(`Unsupported coin without xpub: ${sym}`);
-          }
+            BTC: 'BTC_XPUB',
+            LTC: 'LTC_XPUB',
+            ETH: 'ETH_XPUB',
+            BNB: 'BSC_XPUB',
+            BSC: 'BSC_XPUB',
+            TRX: 'TRON_XPUB',
+            TRON: 'TRON_XPUB',
+            BASE: 'BASE_XPUB'
         }
 
-        const evmSet = new Set(['ETH','BSC','BNB']);
-        const addrToStore = evmSet.has((currencyMap[sym] || sym)) ? String(addressRaw).toLowerCase() : String(addressRaw);
+        const currencyMap: Record<string, string> = {
+            BTC: 'BTC',
+            LTC: 'LTC',
+            ETH: 'ETH',
+            BNB: 'BSC',
+            BSC: 'BSC',
+            TRX: 'TRON',
+            TRON: 'TRON',
+            BASE: 'ETH_BASE',
+            XRP: 'XRP',
+            SOL: 'SOL'
+        }
 
-        const COIN_TYPE: Record<string, number> = { BTC: 0, LTC: 2, ETH: 60, BSC: 60, BNB: 60, TRON: 195, XRP: 144, SOL: 501, BASE: 60 };
-        const coinType = COIN_TYPE[currencyMap[sym] || sym] ?? 60;
-        const hdPath = derivationKey != null ? `m/44'/${coinType}'/0'/0/${derivationKey}` : null;
+        const xpubKeyName =
+            xpubEnvMap[sym] || xpubEnvMap[currencyMap[sym] || '']
+        const xpub = xpubKeyName
+            ? this.config.get<string>(xpubKeyName)!
+            : undefined
 
-        const chainsV4: Record<string,
-          'ethereum-mainnet'|'bsc-mainnet'|'tron-mainnet'|'bitcoin-mainnet'|'litecoin-core-mainnet'|'base-mainnet'|'ripple-mainnet'|'solana-mainnet'
+        const customerId = `u:${userId}:${currencyMap[sym] || sym}`
+        let accountId: string
+        let addressRaw = '' as string
+        let derivationKey: number | null = null
+
+        if (xpub) {
+            accountId = await this.tatum.createVirtualAccount(
+                currencyMap[sym] || sym,
+                xpub,
+                customerId
+            )
+            const created = await this.tatum.createDepositAddress(accountId)
+            addressRaw = created.address
+            derivationKey = created.derivationKey ?? null
+        } else {
+            if (sym === 'XRP') {
+                const acc = await this.tatum.generateXrpAccount()
+                addressRaw = String(acc.address || '')
+                accountId = await this.tatum.createVirtualAccountByAddress(
+                    'XRP',
+                    addressRaw,
+                    customerId
+                )
+            } else if (sym === 'SOL') {
+                const w = await this.tatum.generateSolanaWallet()
+                addressRaw = String(w.address || '')
+                accountId = await this.tatum.createVirtualAccountByAddress(
+                    'SOL',
+                    addressRaw,
+                    customerId
+                )
+            } else if (sym === 'BASE') {
+                const xpubBase = this.config.get<string>('BASE_XPUB')
+                if (!xpubBase) throw new Error('BASE_XPUB not set')
+                accountId = await this.tatum.createVirtualAccount(
+                    'ETH_BASE',
+                    xpubBase,
+                    customerId
+                )
+                const created = await this.tatum.createDepositAddress(accountId)
+                addressRaw = created.address
+                derivationKey = created.derivationKey ?? null
+            } else {
+                throw new Error(`Unsupported coin without xpub: ${sym}`)
+            }
+        }
+
+        const evmSet = new Set(['ETH', 'BSC', 'BNB'])
+        const addrToStore = evmSet.has(currencyMap[sym] || sym)
+            ? String(addressRaw).toLowerCase()
+            : String(addressRaw)
+
+        const COIN_TYPE: Record<string, number> = {
+            BTC: 0,
+            LTC: 2,
+            ETH: 60,
+            BSC: 60,
+            BNB: 60,
+            TRON: 195,
+            XRP: 144,
+            SOL: 501,
+            BASE: 60
+        }
+        const coinType = COIN_TYPE[currencyMap[sym] || sym] ?? 60
+        const hdPath =
+            derivationKey != null
+                ? `m/44'/${coinType}'/0'/0/${derivationKey}`
+                : null
+
+        const chainsV4: Record<
+            string,
+            | 'ethereum-mainnet'
+            | 'bsc-mainnet'
+            | 'tron-mainnet'
+            | 'bitcoin-mainnet'
+            | 'litecoin-core-mainnet'
+            | 'base-mainnet'
+            | 'ripple-mainnet'
+            | 'solana-mainnet'
         > = {
-          ETH: 'ethereum-mainnet',
-          BSC: 'bsc-mainnet',
-          BTC: 'bitcoin-mainnet',
-          LTC: 'litecoin-core-mainnet',
-          TRON: 'tron-mainnet',
-          BASE: 'base-mainnet',
-          XRP: 'ripple-mainnet',
-          SOL: 'solana-mainnet',
-        };
-        const chainV4 = chainsV4[currencyMap[sym] || sym];
+            ETH: 'ethereum-mainnet',
+            BSC: 'bsc-mainnet',
+            BTC: 'bitcoin-mainnet',
+            LTC: 'litecoin-core-mainnet',
+            TRON: 'tron-mainnet',
+            BASE: 'base-mainnet',
+            XRP: 'ripple-mainnet',
+            SOL: 'solana-mainnet'
+        }
+        const chainV4 = chainsV4[sym] || chainsV4[currencyMap[sym] || sym]
 
-        let subId: string | null = null;
-        // if (chainV4) {
-        //   const publicUrl = this.config.get<string>('PUBLIC_URL') || '';
-        //   const cb = `${publicUrl}/api/v1/deposits/ipn/tatum`;
-        //   const sub = await this.tatum.subscribeIncomingNative(chainV4, addrToStore, cb);
-        //   subId = sub?.id || null;
-        // }
+        let subId: string | null = null
+        console.log('chainV4', chainV4)
+        if (chainV4) {
+            const publicUrl = this.config.get<string>('PUBLIC_URL') || ''
+            const cb = `${publicUrl}/api/v1/deposits/ipn/tatum`
+            const sub = await this.tatum.subscribeIncomingNative(
+                chainV4,
+                addrToStore,
+                cb
+            )
+            console.log('sub', sub)
+            subId = sub?.id || null
+        }
 
         await this.prisma.deposit.create({
-          data: {
-            userId,
-            coinId: coin.id,
-            address: addrToStore,
-            pathIndex: derivationKey,
-            amount: '0',
-            sum: '0',
-            txId: '',
-            status: 'pending',
-            tatumAccountId: accountId,
-            tatumSubscriptionId: subId,
-            xpub,
-            currency: currencyMap[sym] || sym,
-            chain: chainV4 || null,
-            hdPath,
-          }
-        });
+            data: {
+                userId,
+                coinId: coin.id,
+                address: addrToStore,
+                pathIndex: derivationKey,
+                amount: '0',
+                sum: '0',
+                txId: '',
+                status: 'pending',
+                tatumAccountId: accountId,
+                tatumSubscriptionId: subId,
+                xpub,
+                currency: currencyMap[sym] || sym,
+                chain: chainV4 || null,
+                hdPath
+            }
+        })
 
-        return { address: addrToStore };
+        return { address: addrToStore }
+    }
 
-      }
-
-      async generateDepositAddress(userId: number, coinSymbol: string) {
+    async generateDepositAddress(userId: number, coinSymbol: string) {
         const coin = await this.prisma.coin.findUnique({
-          where: { symbol: coinSymbol },
-        });
-        if (!coin) throw new NotFoundException(`Coin not found: ${coinSymbol}`);
+            where: { symbol: coinSymbol }
+        })
+        if (!coin) throw new NotFoundException(`Coin not found: ${coinSymbol}`)
 
         const existing = await this.prisma.deposit.findFirst({
-          where: { userId, coinId: coin.id },
-        });
-        if (existing) return { address: existing.address };
-
-
-
-      }
+            where: { userId, coinId: coin.id }
+        })
+        if (existing) return { address: existing.address }
+    }
 }
